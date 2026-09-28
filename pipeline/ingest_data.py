@@ -31,44 +31,21 @@ parse_dates = [
 ]
 
 
-def ingest_data(
-        url: str,
-        engine,
-        target_table: str,
-        chunksize: int = 100000,
-) -> pd.DataFrame:
-    df_iter = pd.read_csv(
-        url,
-        dtype=dtype,
-        parse_dates=parse_dates,
-        iterator=True,
-        chunksize=chunksize
-    )
+def ingest_data(url: str, engine, target_table: str, chunksize: int = 100000) -> pd.DataFrame:
+    df_iter = pd.read_csv(url, dtype=dtype, parse_dates=parse_dates, iterator=True, chunksize=chunksize)
 
     first_chunk = next(df_iter)
 
-    first_chunk.head(0).to_sql(
-        name=target_table,
-        con=engine,
-        if_exists="replace"
-    )
+    first_chunk.head(0).to_sql(name=target_table, con=engine, if_exists="replace")
 
     print(f"Table {target_table} created")
 
-    first_chunk.to_sql(
-        name=target_table,
-        con=engine,
-        if_exists="append"
-    )
+    first_chunk.to_sql(name=target_table, con=engine, if_exists="append")
 
     print(f"Inserted first chunk: {len(first_chunk)}")
 
     for df_chunk in tqdm(df_iter):
-        df_chunk.to_sql(
-            name=target_table,
-            con=engine,
-            if_exists="append"
-        )
+        df_chunk.to_sql(name=target_table, con=engine, if_exists="append")
         print(f"Inserted chunk: {len(df_chunk)}")
 
     print(f'done ingesting to {target_table}')
